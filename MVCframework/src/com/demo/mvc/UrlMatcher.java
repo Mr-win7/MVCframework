@@ -1,16 +1,17 @@
 package com.demo.mvc;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class UrlMatcher
 {
-	final String url;
-	int[] orders;
 	Pattern pattern;
 
-	public UrlMatcher(String url)
+	public UrlMatcher(String projectName, String className, String uri)
 	{
-		this.url = url;
-
+		Pattern params = Pattern.compile("(\\{[^/\\\\]*?\\})");
+		Matcher matcher = params.matcher(uri);
+		String patternString = matcher.replaceAll("([^/\\\\]*?)");
+		this.pattern = Pattern.compile(projectName + className + patternString);
 	}
 }

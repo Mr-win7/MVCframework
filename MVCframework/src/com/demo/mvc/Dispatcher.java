@@ -15,8 +15,27 @@ public class Dispatcher
 	private ExceptionHandler exceptionHandler;
 	private ServletContext servletContext;
 	private ContainerFactory containerFactory;
-	private Map<String, Map<String, Map<UrlMatcher, Action>>> map = new HashMap<String, Map<String, Map<UrlMatcher, Action>>>();
 	private Map<UrlMatcher, Action> urlMap = new HashMap<UrlMatcher, Action>();
+
+	void initAll(Config config) throws InstantiationException, IllegalAccessException, ClassNotFoundException
+	{
+
+		String container = config.getInitParameter("container");
+		if (container == null)
+		{
+			// TODO
+			// throw new
+		}
+		this.containerFactory = (Class.forName(container).newInstance() instanceof ContainerFactory)
+				? (ContainerFactory) Class.forName(container).newInstance()
+				: (ContainerFactory) Class.forName(ContainerFactory.class.getPackage().getName() + "." + container
+						+ ContainerFactory.class.getSimpleName()).newInstance();
+		containerFactory.init(config);
+		List<Object> beans = containerFactory.findAllBeans();
+		initComponents(beans);
+
+		initTemplateFactory(config);
+	}
 
 	void initComponents(List<Object> beans)
 	{
@@ -42,6 +61,12 @@ public class Dispatcher
 		}
 	}
 
+	// TODO
+	void initTemplateFactory(Config config)
+	{
+
+	}
+
 	void addAction(Object bean)
 	{
 		Class<?> clazz = bean.getClass();
@@ -56,15 +81,6 @@ public class Dispatcher
 		else
 		{
 			className = mapping.value();
-		}
-
-		if (!map.containsKey(projectName))
-		{
-			map.put(projectName, new HashMap<String, Map<UrlMatcher, Action>>());
-		}
-		else if (!map.get(projectName).containsKey(className))
-		{
-			map.get(projectName).put(className, new HashMap<UrlMatcher, Action>());
 		}
 
 		Method[] methods = clazz.getMethods();

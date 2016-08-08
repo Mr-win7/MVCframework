@@ -7,11 +7,16 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.demo.mvc.container.ContainerFactory;
+import com.demo.mvc.renderer.Renderer;
 
 public class Dispatcher
 {
+	private Interceptor[] interceptors;
 	private ExceptionHandler exceptionHandler;
 	private ServletContext servletContext;
 	private ContainerFactory containerFactory;
@@ -101,4 +106,35 @@ public class Dispatcher
 		}
 	}
 
+	void handleExecution(Execution execution, HttpServletRequest request, HttpServletResponse response) throws Exception
+	{
+		InterceptorChainImpl chainImpl = new InterceptorChainImpl(interceptors);
+		chainImpl.doInterceptor(execution);
+		handleResult(request, response, chainImpl.getResult());
+	}
+
+	void handleResult(HttpServletRequest request, HttpServletResponse response, Object result) throws Exception
+	{
+		if (result == null)
+		{
+			return;
+		}
+		if (result instanceof Renderer)
+		{
+			Renderer renderer = (Renderer) result;
+			renderer.render(this.servletContext, request, response);
+			return;
+		}
+		if (result instanceof String)
+		{
+			String string = (String) result;
+			if (string.startsWith("redirect:"))
+			{
+				response.sendRedirect(string.substring(9));
+				return;
+			}
+		}
+		// TODO
+		throw new ServletException();
+	}
 }

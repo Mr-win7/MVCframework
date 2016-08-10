@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public class DispatcherFilter implements Filter
 {
+	private Dispatcher dispatcher;
 
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
@@ -19,7 +20,16 @@ public class DispatcherFilter implements Filter
 	{
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
-
+		String method = request.getMethod();
+		if ("GET".equals(method) || "POST".equals(method))
+		{
+			if (!dispatcher.service(request, response))
+			{
+				chain.doFilter(req, resp);
+				return;
+			}
+		}
+		response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 	}
 
 }

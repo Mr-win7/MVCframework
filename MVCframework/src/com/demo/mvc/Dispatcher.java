@@ -108,9 +108,21 @@ public class Dispatcher
 
 	void handleExecution(Execution execution, HttpServletRequest request, HttpServletResponse response) throws Exception
 	{
-		InterceptorChainImpl chainImpl = new InterceptorChainImpl(interceptors);
-		chainImpl.doInterceptor(execution);
-		handleResult(request, response, chainImpl.getResult());
+		ActionContext.setActionContext(servletContext, request, response);
+		try
+		{
+			InterceptorChainImpl chainImpl = new InterceptorChainImpl(interceptors);
+			chainImpl.doInterceptor(execution);
+			handleResult(request, response, chainImpl.getResult());
+		}
+		catch (Exception e)
+		{
+			// TODO: handle exception
+		}
+		finally
+		{
+			ActionContext.removeActionContext();
+		}
 	}
 
 	void handleResult(HttpServletRequest request, HttpServletResponse response, Object result) throws Exception

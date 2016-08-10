@@ -14,6 +14,7 @@ public class DispatcherServlet extends HttpServlet
 	 * 
 	 */
 	private static final long serialVersionUID = -5504716990119848726L;
+	private Dispatcher dispatcher;
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
@@ -27,6 +28,7 @@ public class DispatcherServlet extends HttpServlet
 	{
 		// TODO Auto-generated method stub
 		super.doPost(req, resp);
+		doGet(req, resp);
 	}
 
 	@Override
@@ -41,6 +43,8 @@ public class DispatcherServlet extends HttpServlet
 	{
 		// TODO Auto-generated method stub
 		super.init(config);
+		this.dispatcher=new Dispatcher();
+		this.dispatcher.
 	}
 
 }

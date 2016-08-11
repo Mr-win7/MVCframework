@@ -3,6 +3,7 @@ package com.demo.mvc;
 import java.io.IOException;
 
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -19,14 +20,13 @@ public class DispatcherServlet extends HttpServlet
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
 	{
-		// TODO Auto-generated method stub
 		super.doGet(req, resp);
+		dispatcher.service(req, resp);
 	}
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
 	{
-		// TODO Auto-generated method stub
 		super.doPost(req, resp);
 		doGet(req, resp);
 	}
@@ -43,8 +43,24 @@ public class DispatcherServlet extends HttpServlet
 	{
 		// TODO Auto-generated method stub
 		super.init(config);
-		this.dispatcher=new Dispatcher();
-		this.dispatcher.
+		this.dispatcher = new Dispatcher();
+		this.dispatcher.init(new Config()
+		{
+
+			@Override
+			public ServletContext getServletContext()
+			{
+				// TODO Auto-generated method stub
+				return config.getServletContext();
+			}
+
+			@Override
+			public String getInitParameter(String name)
+			{
+				// TODO Auto-generated method stub
+				return config.getInitParameter(name);
+			}
+		});
 	}
 
 }

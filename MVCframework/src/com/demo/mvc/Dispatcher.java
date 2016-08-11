@@ -1,5 +1,6 @@
 package com.demo.mvc;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,7 +13,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.demo.mvc.container.ContainerFactory;
+import com.demo.mvc.converter.ConverterFactory;
 import com.demo.mvc.renderer.Renderer;
+import com.demo.mvc.template.JspTemplateFactory;
+import com.demo.mvc.template.TemplateFactory;
 
 public class Dispatcher
 {
@@ -20,7 +24,22 @@ public class Dispatcher
 	private ExceptionHandler exceptionHandler;
 	private ServletContext servletContext;
 	private ContainerFactory containerFactory;
+	private ConverterFactory converterFactory;
 	private Map<UrlMatcher, Action> urlMap = new HashMap<UrlMatcher, Action>();
+
+	void init(Config config)
+	{
+		this.servletContext = config.getServletContext();
+		try
+		{
+			initAll(config);
+		}
+		catch (InstantiationException | IllegalAccessException | ClassNotFoundException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	void initAll(Config config) throws InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
@@ -66,10 +85,21 @@ public class Dispatcher
 		}
 	}
 
-	// TODO
 	void initTemplateFactory(Config config)
+			throws InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
+		String name = config.getInitParameter("template");
+		if (name == null)
+		{
+			name = JspTemplateFactory.class.getName();
+		}
 
+		TemplateFactory templateFactory = (Class.forName(name).newInstance() instanceof TemplateFactory)
+				? (TemplateFactory) Class.forName(name).newInstance()
+				: (TemplateFactory) Class.forName(TemplateFactory.class.getPackage().getName() + "." + name
+						+ TemplateFactory.class.getSimpleName()).newInstance();
+		templateFactory.init(config);
+		TemplateFactory.setTemplateFactory(templateFactory);
 	}
 
 	void addAction(Object bean)
@@ -148,5 +178,44 @@ public class Dispatcher
 		}
 		// TODO
 		throw new ServletException();
+	}
+
+	public boolean service(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
+	{
+		String uri = request.getRequestURI();
+		String path = request.getContextPath();
+		if (path.length() > 0)
+		{
+			uri = uri.substring(path.length());
+		}
+		if (request.getCharacterEncoding() == null)
+		{
+			request.setCharacterEncoding("UTF-8");
+		}
+		Execution execution = null;
+		for (UrlMatcher urlMatcher : this.urlMap.keySet())
+		{
+			String[] args = urlMatcher.getMatchedParameters(uri);
+			if (args != null)
+			{
+				Action action = urlMap.get(urlMatcher);
+				Object[] arguments = new Object[args.length];
+				for (int i = 0; i < arguments.length; i++)
+				{
+					Class<?> type = action.arguments[i];
+					if (type.equals(String.class))
+					{
+						arguments[i] = args[i];
+					}
+					else
+					{
+						arguments[i] = converterFactory.convert(type, args[i]);
+					}
+				}
+				execution = new Execution(request, response, action, arguments);
+				break;
+			}
+		}
+		return execution != null;
 	}
 }
